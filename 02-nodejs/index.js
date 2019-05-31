@@ -3,22 +3,28 @@
  * 1 Obter o numero de telefone de um usuario a partir do id
  * 2 Obter o endereco do usuario pelo id
  */
-function obterUsuario(callBack) {
-  setTimeout(() => {
-    return callBack(null, {
-      id: 1,
-      nome: "Valdir",
-      dataNascimento: new Date()
-    });
-  }, 3000);
+const util = require("util");
+const resolveEndereco = util.promisify(obterEndereco);
+function obterUsuario() {
+  return new Promise(function resolvePromise(resolve, reject) {
+    setTimeout(() => {
+      return resolve({
+        id: 1,
+        nome: "Valdir",
+        dataNascimento: new Date()
+      });
+    }, 3000);
+  });
 }
-function obterTelefone(idUsuario, callBack) {
-  setTimeout(() => {
-    return callBack(null, {
-      telefone: "992395591",
-      ddd: 67
-    });
-  }, 2000);
+function obterTelefone(idUsuario) {
+  return new Promise(function resolvePromise(resolve, reject) {
+    setTimeout(() => {
+      return resolve({
+        telefone: "992395591",
+        ddd: 67
+      });
+    }, 2000);
+  });
 }
 function obterEndereco(idUsuario, callBack) {
   setTimeout(() => {
@@ -29,26 +35,33 @@ function obterEndereco(idUsuario, callBack) {
   }, 2000);
 }
 
-obterUsuario(function resolveUsuario(errUsuario, usuario) {
-  if (errUsuario) {
-    console.error("DEU RUIM no USUARIO");
-    return;
-  }
-  obterTelefone(usuario.id, function resolveTelefone(errTelefone, telefone) {
-    if (errTelefone) {
-      console.error("DEU RUIM no TELEFONE");
-      return;
-    }
-    obterEndereco(usuario.id, function resolveEndereco(errEndereco, endereco) {
-      if (errEndereco) {
-        console.error("DEU RUIM no ENDEREÇO");
-        return;
-      }
-      console.log(`
-      Nome: ${usuario.nome}
-      Endereço: ${endereco.rua},${endereco.numero}
-      Telefone: (${telefone.ddd}) ${telefone.telefone}
-      `);
+obterUsuario()
+  .then(function(resultado) {
+    return obterTelefone().then(function(resultadoTelefone) {
+      return {
+        usuario: resultado,
+        telefone: resultadoTelefone
+      };
     });
+  })
+  .then(function(resultado) {
+    return resolveEndereco(resultado.usuario.id).then(function(
+      resultadoEndereco
+    ) {
+      return {
+        usuario: resultado.usuario,
+        telefone: resultado.telefone,
+        endereco: resultadoEndereco
+      };
+    });
+  })
+  .then(function(resultado) {
+    console.log(`
+    Nome: ${resultado.usuario.nome}
+    Endereço: ${resultado.endereco.rua},${resultado.endereco.numero}
+    Telefone: (${resultado.telefone.ddd}) ${resultado.telefone.telefone}
+    `);
+  })
+  .catch(function(error) {
+    console.log("Error:", error);
   });
-});
