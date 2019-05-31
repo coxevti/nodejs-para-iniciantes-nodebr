@@ -4,7 +4,7 @@
  * 2 Obter o endereco do usuario pelo id
  */
 const util = require("util");
-const resolveEndereco = util.promisify(obterEndereco);
+const enderecoAsync = util.promisify(obterEndereco);
 function obterUsuario() {
   return new Promise(function resolvePromise(resolve, reject) {
     setTimeout(() => {
@@ -13,7 +13,7 @@ function obterUsuario() {
         nome: "Valdir",
         dataNascimento: new Date()
       });
-    }, 3000);
+    }, 2000);
   });
 }
 function obterTelefone(idUsuario) {
@@ -35,33 +35,24 @@ function obterEndereco(idUsuario, callBack) {
   }, 2000);
 }
 
-obterUsuario()
-  .then(function(resultado) {
-    return obterTelefone().then(function(resultadoTelefone) {
-      return {
-        usuario: resultado,
-        telefone: resultadoTelefone
-      };
-    });
-  })
-  .then(function(resultado) {
-    return resolveEndereco(resultado.usuario.id).then(function(
-      resultadoEndereco
-    ) {
-      return {
-        usuario: resultado.usuario,
-        telefone: resultado.telefone,
-        endereco: resultadoEndereco
-      };
-    });
-  })
-  .then(function(resultado) {
+async function main() {
+  try {
+    console.time("tempo-promise");
+    const usuario = await obterUsuario();
+    const resultado = await Promise.all([
+      obterTelefone(usuario.id),
+      enderecoAsync(usuario.id)
+    ]);
+    const telefone = resultado[0];
+    const endereco = resultado[1];
     console.log(`
-    Nome: ${resultado.usuario.nome}
-    Endereço: ${resultado.endereco.rua},${resultado.endereco.numero}
-    Telefone: (${resultado.telefone.ddd}) ${resultado.telefone.telefone}
+    Nome: ${usuario.nome}
+    Endereço: ${endereco.rua},${endereco.numero}
+    Telefone: (${telefone.ddd}) ${telefone.telefone}
     `);
-  })
-  .catch(function(error) {
-    console.log("Error:", error);
-  });
+    console.timeEnd("tempo-promise");
+  } catch (error) {
+    console.error("DEU RUIM", error);
+  }
+}
+main();
